@@ -102,3 +102,14 @@ def build_rolling_vtt(path: Path, sentences: list[str], seg: float = 2.0) -> Non
         start, end = idx * seg, (idx + 1) * seg
         out += [f"{stamp(start)} --> {stamp(end)}", sentences[idx], sentences[idx + 1], ""]
     path.write_text("\n".join(out), encoding="utf-8")
+
+
+@pytest.fixture(scope="session")
+def long_cut_clip(tmp_path_factory: pytest.TempPathFactory) -> Path:
+    """A longer (~42s) clip with visibly changing content, for uniform
+    extract() spread tests. A short clip like ``cut_clip`` can't distinguish
+    "sampled from the head" from "spread across the range" — the two only
+    diverge once there's real duration between them."""
+    path = tmp_path_factory.mktemp("clips") / "long_cuts.mp4"
+    build_cut_clip(path, n=14, seg=3.0, size="320x240", fps=5)
+    return path
