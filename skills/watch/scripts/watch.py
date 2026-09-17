@@ -114,6 +114,12 @@ def main() -> int:
     transcript_text: str | None = None
     transcript_source: str | None = None
     video_path: str | None = None
+    # True only when a video download was ATTEMPTED and FAILED but a subtitle
+    # came down anyway (download.py sets this) -- distinct from video_path
+    # being None because --detail transcript deliberately skipped the
+    # download by user choice. Conflating the two would let a real failure
+    # hide behind wording written for a benign, expected state.
+    degraded = False
 
     # --timestamps needs the video for frame grabs, so it overrides the
     # transcript-mode download skip (and forces a full, not audio-only, fetch).
@@ -159,6 +165,15 @@ def main() -> int:
             print("[watch] using local file…", file=sys.stderr)
             dl = download(args.source, download_dir)
         video_path = dl["video_path"]
+        degraded = bool(dl.get("degraded"))
+        if degraded:
+            failure_msg = dl.get("failure_message") or "yt-dlp did not produce a video file"
+            print(f"[watch] DEGRADED: {failure_msg}", file=sys.stderr)
+            print(
+                "[watch] no video obtained — continuing in TRANSCRIPT-ONLY mode "
+                "(0 frames, nothing was watched visually).",
+                file=sys.stderr,
+            )
 
     meta = get_metadata(video_path) if video_path else {
         "duration_seconds": float((dl.get("info") or {}).get("duration") or 0),
@@ -321,22 +336,33 @@ def main() -> int:
     print("# watch: video report")
     print()
     print(f"- **Source:** {args.source}")
+    if degraded:
+        print("- **Video:** ⚠️ NOT OBTAINED — transcript-only mode, 0 frames (see warning below)")
     if info.get("title"):
         print(f"- **Title:** {info['title']}")
     if info.get("uploader"):
         print(f"- **Uploader:** {info['uploader']}")
     print(f"- **Duration:** {format_time(full_duration)} ({full_duration:.1f}s)")
     if focused:
-        print(
-            f"- **Focus range:** {format_time(effective_start)} → {format_time(effective_end)} "
-            f"({effective_duration:.1f}s)"
-        )
+        if degraded and end_sec is None:
+            print(f"- **Focus range:** {format_time(effective_start)} → end of transcript")
+        else:
+            print(
+                f"- **Focus range:** {format_time(effective_start)} → {format_time(effective_end)} "
+                f"({effective_duration:.1f}s)"
+            )
     if meta.get("width") and meta.get("height"):
         print(f"- **Resolution:** {meta['width']}x{meta['height']} ({meta.get('codec') or 'unknown codec'})")
     range_mode = "focused" if focused else "full"
     print(f"- **Detail:** {detail}")
     detail_count = frame_meta.get("selected_count", 0)
-    if frame_error:
+    # Two distinct failures, reported distinctly. `degraded` means yt-dlp never
+    # handed us a video at all; `frame_error` means we had the video but ffmpeg
+    # could not turn it into frames. No-video is the more fundamental of the
+    # two, so it wins when somehow both are set.
+    if degraded:
+        print("- **Frames:** 0 — NO VIDEO OBTAINED")
+    elif frame_error:
         print(f"- **Frames:** extraction FAILED — transcript only (`{frame_error}`)")
     elif detail != "transcript":
         cap_label = "unlimited" if detail_budget is None else str(detail_budget)
@@ -371,6 +397,18 @@ def main() -> int:
     else:
         print("- **Transcript:** none available")
 
+    if degraded:
+        print()
+        print(
+            "> ⚠️ **NO VIDEO OBTAINED — TRANSCRIPT-ONLY MODE.** The video stream could not be "
+            "downloaded, so there are **zero frames** and nothing in this run was watched "
+            "visually. Answer using the transcript below only — do not describe or infer any "
+            "visual content."
+        )
+        print(">")
+        for line in (dl.get("failure_message") or "yt-dlp did not produce a video file").splitlines():
+            print(f"> {line}")
+
     if detail == "token-burner" and len(frames) > 250:
         print()
         print(
@@ -378,7 +416,7 @@ def main() -> int:
             "This may use a large number of image tokens."
         )
 
-    if not focused and full_duration > 600 and detail not in ("transcript", "token-burner"):
+    if not degraded and not focused and full_duration > 600 and detail not in ("transcript", "token-burner"):
         mins = int(full_duration // 60)
         print()
         print(
@@ -391,7 +429,13 @@ def main() -> int:
     print()
     print("## Frames")
     print()
-    if frames:
+    if degraded:
+        print(
+            "**No frames — no video was downloaded.** There is nothing to read in this "
+            "section. Do not treat its absence as evidence of the video's visual content, "
+            "and do not answer as though frames were reviewed."
+        )
+    elif frames:
         print(f"Frames live at: `{work / 'frames'}`")
         print()
         print(
