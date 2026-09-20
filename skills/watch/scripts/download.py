@@ -26,7 +26,32 @@ VIDEO_EXTS = {".mp4", ".mkv", ".webm", ".mov", ".m4v", ".avi", ".flv", ".wmv"}
 # but the same file says to delete that dir when done, and nothing survives
 # across sessions. Keying the download by URL makes the reuse automatic.
 AUDIO_FORMAT = "ba/bestaudio"
-VIDEO_FORMAT = "bv*[height<=720]+ba/b[height<=720]/bv+ba/b"
+
+# Source height is capped because the frames are downscaled anyway: at the
+# default 512px frame width a 720p source is already more pixels than the
+# frame keeps, and a 1080p pull costs ~75% more bytes for no visible gain
+# (measured: 70MB vs 40MB, indistinguishable at 1024px frames). The cap only
+# binds once the requested frame width approaches the source width, so it is
+# raised from the frame resolution rather than lifted globally.
+DEFAULT_MAX_HEIGHT = 720
+HEIGHT_LADDER = (720, 1080, 1440, 2160)
+
+
+def height_for_resolution(resolution: int, floor: int = DEFAULT_MAX_HEIGHT) -> int:
+    """Smallest standard source height that can supply `resolution` px natively.
+
+    A 16:9 source of height H is 16/9*H wide, so a frame W px wide needs
+    H >= W*9/16 to avoid upscaling. Below that the extra bytes buy nothing.
+    """
+    needed = (resolution * 9 + 15) // 16
+    for height in HEIGHT_LADDER:
+        if height >= max(needed, floor):
+            return height
+    return HEIGHT_LADDER[-1]
+
+
+def video_format(max_height: int = DEFAULT_MAX_HEIGHT) -> str:
+    return f"bv*[height<={max_height}]+ba/b[height<={max_height}]/bv+ba/b"
 
 CACHE_LIMIT_BYTES = 2 * 1024 * 1024 * 1024
 
@@ -36,7 +61,8 @@ def cache_root() -> Path:
     return (Path(base) if base else Path.home() / ".cache") / "watch" / "downloads"
 
 
-def cache_dir_for(url: str, audio_only: bool, root: Path | None = None) -> Path:
+def cache_dir_for(url: str, audio_only: bool, root: Path | None = None,
+                  max_height: int = DEFAULT_MAX_HEIGHT) -> Path:
     """Directory holding this URL's download.
 
     audio_only is part of the key: a `transcript` run fetches audio alone, and
@@ -45,7 +71,7 @@ def cache_dir_for(url: str, audio_only: bool, root: Path | None = None) -> Path:
     """
     # The format spec is part of the key: raising the resolution cap must not
     # serve a previously cached lower-resolution file for the same URL.
-    fmt = AUDIO_FORMAT if audio_only else VIDEO_FORMAT
+    fmt = AUDIO_FORMAT if audio_only else video_format(max_height)
     payload = f"{url}\x00{'audio' if audio_only else 'video'}\x00{fmt}".encode()
     digest = hashlib.sha256(payload).hexdigest()[:16]
     return (root or cache_root()) / digest
@@ -247,6 +273,7 @@ def download_url(
     out_dir: Path,
     audio_only: bool = False,
     use_cache: bool = False,
+    max_height: int = DEFAULT_MAX_HEIGHT,
 ) -> dict:
     if shutil.which("yt-dlp") is None:
         raise SystemExit("yt-dlp is not installed. Install with: brew install yt-dlp")
@@ -261,7 +288,7 @@ def download_url(
     out_dir.mkdir(parents=True, exist_ok=True)
     output_template = str(out_dir / "video.%(ext)s")
 
-    fmt = AUDIO_FORMAT if audio_only else VIDEO_FORMAT
+    fmt = AUDIO_FORMAT if audio_only else video_format(max_height)
     cmd = [
         "yt-dlp",
         "-N", "8",
@@ -311,9 +338,11 @@ def download(
     out_dir: Path,
     audio_only: bool = False,
     use_cache: bool = False,
+    max_height: int = DEFAULT_MAX_HEIGHT,
 ) -> dict:
     if is_url(source):
-        return download_url(source, out_dir, audio_only=audio_only, use_cache=use_cache)
+        return download_url(source, out_dir, audio_only=audio_only, use_cache=use_cache,
+                            max_height=max_height)
     return resolve_local(source)
 
 

@@ -48,13 +48,13 @@ def test_cache_hit_still_prefers_orig_over_translated(tmp_path):
 
 
 def test_media_format_is_part_of_the_cache_key(monkeypatch, tmp_path):
-    """Raising the resolution cap must not serve the cached 720p file.
+    """Changing the format spec must not serve the previously cached file.
 
-    The key was url + audio/video only, so changing VIDEO_FORMAT would have
-    reused a lower-resolution download for the same URL indefinitely.
+    The key was url + audio/video only, so any change to what gets downloaded
+    would have reused the old media for the same URL indefinitely.
     """
     before = download.cache_dir_for(URL, audio_only=False, root=tmp_path)
-    monkeypatch.setattr(download, "VIDEO_FORMAT", "bv*[height<=1080]+ba/b")
+    monkeypatch.setattr(download, "video_format", lambda h=None: "bv*[height<=1080]+ba/b")
     after = download.cache_dir_for(URL, audio_only=False, root=tmp_path)
     assert before != after
 

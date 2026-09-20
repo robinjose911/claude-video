@@ -16,7 +16,7 @@ SCRIPT_DIR = Path(__file__).parent.resolve()
 sys.path.insert(0, str(SCRIPT_DIR))
 
 from config import frame_cap, get_config  # noqa: E402
-from download import cache_dir_for, download, fetch_captions, is_url  # noqa: E402
+from download import DEFAULT_MAX_HEIGHT, cache_dir_for, download, fetch_captions, height_for_resolution, is_url  # noqa: E402
 from frames import MAX_FPS, auto_fps, auto_fps_focus, extract_at_timestamps, extract_keyframes, extract_scene_or_uniform, format_time, get_metadata, merge_frames, parse_time, parse_timestamps  # noqa: E402
 from transcribe import filter_range, format_transcript, parse_vtt  # noqa: E402
 from whisper import load_api_key, transcribe_video  # noqa: E402
@@ -30,6 +30,15 @@ def main() -> int:
     ap.add_argument("source", help="Video URL or local file path")
     ap.add_argument("--max-frames", type=int, default=None, help="Override frame cap")
     ap.add_argument("--resolution", type=int, default=512, help="Frame width in pixels (default 512)")
+    ap.add_argument(
+        "--max-height",
+        type=int,
+        default=None,
+        help="Cap the source video height (default: derived from --resolution, "
+             f"minimum {DEFAULT_MAX_HEIGHT}). Raise it only to read fine on-screen "
+             "text; a taller source costs proportionally more download for frames "
+             "that get downscaled anyway.",
+    )
     ap.add_argument("--fps", type=float, default=None, help="Override auto-fps")
     ap.add_argument(
         "--detail",
@@ -98,6 +107,8 @@ def main() -> int:
     # An explicit --out-dir means the user wants everything in one named place,
     # so honour that over the shared cache.
     use_cache = url_source and not args.no_cache and not args.out_dir
+    # Pull only as many source pixels as the requested frame width can use.
+    max_height = args.max_height or height_for_resolution(args.resolution)
     dl: dict = {"subtitle_path": None, "info": {}, "downloaded": False}
     transcript_segments: list[dict] = []
     transcript_text: str | None = None
@@ -111,7 +122,10 @@ def main() -> int:
     # the cache entry alongside the media, rather than in a throwaway dir.
     # Keyed per audio/video so a transcript-only run never hands a later frame
     # run a file with no video stream.
-    download_dir = cache_dir_for(args.source, audio_only) if use_cache else work / "download"
+    download_dir = (
+        cache_dir_for(args.source, audio_only, max_height=max_height)
+        if use_cache else work / "download"
+    )
 
     if url_source:
         print("[watch] checking metadata/captions via yt-dlp…", file=sys.stderr)
@@ -139,6 +153,7 @@ def main() -> int:
                 download_dir,
                 audio_only=audio_only,
                 use_cache=use_cache,
+                max_height=max_height,
             )
         else:
             print("[watch] using local file…", file=sys.stderr)
@@ -343,7 +358,10 @@ def main() -> int:
             f"(transcript-cue{drop_note})"
         )
     if frames:
-        print(f"- **Frame size:** max {args.resolution}px wide, max 1998px tall")
+        print(
+            f"- **Frame size:** max {args.resolution}px wide, max 1998px tall "
+            f"(source capped at {max_height}p)"
+        )
     if transcript_segments:
         in_range = " in range" if focused else ""
         print(
