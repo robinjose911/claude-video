@@ -41,7 +41,7 @@ Optimised for one workflow: **watch → check → summarise → ask follow-ups**
 - [x] CREDITS.md updated (@gth-spec, @oheewono)
 - [x] Commit, push, bump version → 0.2.2
 - [ ] `/plugin update watch@claude-video` — **Robin runs this**; managed install tracks this fork
-- [ ] Thank @gth-spec and @oheewono on their upstream PRs
+- [x] Thanked @gth-spec (#236), @oheewono (#221) and @charles98601-sg (#235) on their upstream PRs
 
 ---
 
