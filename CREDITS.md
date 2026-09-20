@@ -20,6 +20,8 @@ page credit the author, not this fork. Please thank them on their upstream PR.
 | [#214](https://github.com/bradautomates/claude-video/pull/214) | [@nbkwabi](https://github.com/nbkwabi) | Stops one provider's API key being sent to the other provider's endpoint |
 | [#225](https://github.com/bradautomates/claude-video/pull/225) | [@OpenClawLinda](https://github.com/OpenClawLinda) | Collapses YouTube rolling auto-captions that shipped every line twice |
 | [#226](https://github.com/bradautomates/claude-video/pull/226) | [@OpenClawLinda](https://github.com/OpenClawLinda) | Uniform sampling spreads across the range instead of only the head |
+| [#236](https://github.com/bradautomates/claude-video/pull/236) | [@gth-spec](https://github.com/gth-spec) | Flags transcript proper nouns as unverified, so names get checked against frames |
+| [#221](https://github.com/bradautomates/claude-video/pull/221) | [@oheewono](https://github.com/oheewono) | Prefers human-authored caption tracks over auto-generated ones |
 
 If you are one of these authors and would prefer your work not be carried here, open an
 issue and it will be removed.

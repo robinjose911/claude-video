@@ -2,6 +2,29 @@
 
 All notable changes to `/watch` are documented here.
 
+## [0.2.2] — 2026-09-20 (fork)
+
+### Added
+- **Proper nouns in transcripts are flagged as unverified** (upstream #236, @gth-spec).
+  Captions transcribe phonetically, so names arrive wrong or missing entirely. Measured on
+  one real video: "TypeSafe", "Diogo", "Almeida" and "Vercel" appear **zero times** in the
+  auto-caption track despite being central to the content — they are only legible from
+  frames. The skill now says to confirm names against a frame, and to mark them as
+  transcript-only and unverified where no frame does.
+
+### Changed
+- **Human-authored caption tracks are preferred over auto-generated ones** (upstream #221,
+  @oheewono). Manual tracks are punctuated, speaker-labelled and roughly a third the size
+  of the rolling auto-generated variant.
+- **Among auto tracks, `en-orig` now outranks a bare `en`.** #221 had this the other way
+  round; on a non-English video `en` is YouTube's machine translation while `en-orig` is
+  the source-language track, so the original would have been silently replaced by a
+  translation. Byte-identical on English videos, so no cost where it does not apply.
+
+### Added (tests)
+- `tests/test_subtitle_choice.py` — five tests covering track selection. #221 shipped with
+  none; the ordering test fails against its original ranking.
+
 ## [0.2.1] — 2026-09-20 (fork)
 
 First release of the [robinjose911](https://github.com/robinjose911/claude-video) fork of
