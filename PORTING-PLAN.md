@@ -49,7 +49,6 @@ Optimised for one workflow: **watch → check → summarise → ask follow-ups**
 
 | PR | Lines | Why it matters here |
 |---|---|---|
-| #235 | 249 | Cache downloads so a repeat run skips the fetch. This session re-downloaded the same 27 MB video twice while answering follow-ups. |
 | #228 | 483 | Explain a 403 and keep the transcript when only the video stream fails. Same partial-success philosophy as our own extraction guard. Needs careful review — largest of the shortlist. |
 | #58  | 36  | Warn when yt-dlp is stale. (#227 does the same in 346 lines — prefer the small one unless review says otherwise.) |
 
@@ -82,3 +81,8 @@ Optimised for one workflow: **watch → check → summarise → ask follow-ups**
 - [x] **#214** cross-provider API key leak (@nbkwabi) — was live: `--whisper groq` posted the OpenAI key to api.groq.com
 - [x] **#225** rolling-caption dedupe (@OpenClawLinda) — ~50% of every auto-caption transcript was duplicated
 - [x] **#226** uniform sampling spread (@OpenClawLinda) — `--fps 2 --max-frames 6` covered 2.5s of a 16-minute video
+- [x] **#236** proper nouns unverified (@gth-spec) — names absent from captions entirely; frames are the only source
+- [x] **#221** human-authored captions (@oheewono) + our fix: `en-orig` must outrank translated `en`
+- [x] **#235** download cache (@charles98601-sg) + our fixes: cache hits kept dropping the #221 caption
+      preference, and the key ignored the media format so the queued 720p-cap lift would have been
+      served stale files. Measured 16.2s cold → 8.7s warm.

@@ -22,6 +22,7 @@ page credit the author, not this fork. Please thank them on their upstream PR.
 | [#226](https://github.com/bradautomates/claude-video/pull/226) | [@OpenClawLinda](https://github.com/OpenClawLinda) | Uniform sampling spreads across the range instead of only the head |
 | [#236](https://github.com/bradautomates/claude-video/pull/236) | [@gth-spec](https://github.com/gth-spec) | Flags transcript proper nouns as unverified, so names get checked against frames |
 | [#221](https://github.com/bradautomates/claude-video/pull/221) | [@oheewono](https://github.com/oheewono) | Prefers human-authored caption tracks over auto-generated ones |
+| [#235](https://github.com/bradautomates/claude-video/pull/235) | [@charles98601-sg](https://github.com/charles98601-sg) | Caches downloads by URL so a repeat run skips the fetch |
 
 If you are one of these authors and would prefer your work not be carried here, open an
 issue and it will be removed.
