@@ -25,6 +25,9 @@ VIDEO_EXTS = {".mp4", ".mkv", ".webm", ".mov", ".m4v", ".avi", ".flv", ".wmv"}
 # asking the model to re-point a second run at the file left in the work dir,
 # but the same file says to delete that dir when done, and nothing survives
 # across sessions. Keying the download by URL makes the reuse automatic.
+AUDIO_FORMAT = "ba/bestaudio"
+VIDEO_FORMAT = "bv*[height<=720]+ba/b[height<=720]/bv+ba/b"
+
 CACHE_LIMIT_BYTES = 2 * 1024 * 1024 * 1024
 
 
@@ -40,7 +43,10 @@ def cache_dir_for(url: str, audio_only: bool, root: Path | None = None) -> Path:
     reusing that for a later frame-extracting run would hand ffmpeg a file with
     no video stream.
     """
-    payload = f"{url}\x00{'audio' if audio_only else 'video'}".encode()
+    # The format spec is part of the key: raising the resolution cap must not
+    # serve a previously cached lower-resolution file for the same URL.
+    fmt = AUDIO_FORMAT if audio_only else VIDEO_FORMAT
+    payload = f"{url}\x00{'audio' if audio_only else 'video'}\x00{fmt}".encode()
     digest = hashlib.sha256(payload).hexdigest()[:16]
     return (root or cache_root()) / digest
 
@@ -91,14 +97,17 @@ def _cached_download(out_dir: Path) -> dict | None:
     # but an empty file would still match — treat it as a miss and re-fetch.
     if video is None or video.stat().st_size == 0:
         return None
-    info_path = out_dir / "video.info.json"
     try:  # refresh LRU position
         os.utime(out_dir, None)
     except OSError:
         pass
+    info_path = out_dir / "video.info.json"
     return {
         "video_path": str(video),
-        "subtitle_path": str(sub) if (sub := _pick_subtitle(out_dir)) else None,
+        # Pass the manual-track set here too, or a cache hit silently drops the
+        # human-authored caption preference and falls back to auto ranking.
+        "subtitle_path": str(sub) if (sub := _pick_subtitle(
+            out_dir, _manual_sub_langs(info_path))) else None,
         "info": _read_info(info_path, "") or {},
         "downloaded": False,
         "cached": True,
@@ -252,7 +261,7 @@ def download_url(
     out_dir.mkdir(parents=True, exist_ok=True)
     output_template = str(out_dir / "video.%(ext)s")
 
-    fmt = "ba/bestaudio" if audio_only else "bv*[height<=720]+ba/b[height<=720]/bv+ba/b"
+    fmt = AUDIO_FORMAT if audio_only else VIDEO_FORMAT
     cmd = [
         "yt-dlp",
         "-N", "8",
