@@ -23,6 +23,7 @@ page credit the author, not this fork. Please thank them on their upstream PR.
 | [#236](https://github.com/bradautomates/claude-video/pull/236) | [@gth-spec](https://github.com/gth-spec) | Flags transcript proper nouns as unverified, so names get checked against frames |
 | [#221](https://github.com/bradautomates/claude-video/pull/221) | [@oheewono](https://github.com/oheewono) | Prefers human-authored caption tracks over auto-generated ones |
 | [#235](https://github.com/bradautomates/claude-video/pull/235) | [@charles98601-sg](https://github.com/charles98601-sg) | Caches downloads by URL so a repeat run skips the fetch |
+| [#228](https://github.com/bradautomates/claude-video/pull/228) | [@OpenClawLinda](https://github.com/OpenClawLinda) | Explains a 403 as likely yt-dlp staleness, and keeps the transcript when only the video stream fails |
 
 If you are one of these authors and would prefer your work not be carried here, open an
 issue and it will be removed.
