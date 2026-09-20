@@ -11,9 +11,14 @@ Fixes written by other contributors, submitted upstream and still unmerged there
 cherry-picked with its original git authorship intact, so `git log` and the GitHub commit
 page credit the author, not this fork. Please thank them on their upstream PR.
 
+> Note: @OpenClawLinda's commit email is not registered to their GitHub account, so
+> GitHub renders the author name without a profile link. The credit is theirs; the
+> link is here and in the commit message.
+
 | Upstream PR | Author | What it fixes |
 |---|---|---|
 | [#214](https://github.com/bradautomates/claude-video/pull/214) | [@nbkwabi](https://github.com/nbkwabi) | Stops one provider's API key being sent to the other provider's endpoint |
+| [#225](https://github.com/bradautomates/claude-video/pull/225) | [@OpenClawLinda](https://github.com/OpenClawLinda) | Collapses YouTube rolling auto-captions that shipped every line twice |
 
 If you are one of these authors and would prefer your work not be carried here, open an
 issue and it will be removed.
