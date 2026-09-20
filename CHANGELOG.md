@@ -2,6 +2,52 @@
 
 All notable changes to `/watch` are documented here.
 
+## [0.2.3] — 2026-09-20 (fork)
+
+### Added
+- **Downloads are cached by URL** (upstream #235, @charles98601-sg). Downloading dominates a
+  run; a follow-up question about the same video used to pay for it again. Keyed under
+  `~/.cache/watch/downloads`, 2 GB LRU cap, audio-only and full-video kept as separate
+  entries. Measured on a 16-minute video: **16.2s cold, 8.7s warm**, identical frame
+  selection. `--no-cache` and `--out-dir` opt out.
+- **A 403 now explains itself, and a dead video stream no longer discards the transcript**
+  (upstream #228, @OpenClawLinda). A bare `HTTP 403` reads like a blocked video when it is
+  usually a stale yt-dlp, so the message now says so, reports the installed version and
+  prints the matching upgrade command. When only the media stream fails while captions
+  succeed, the run completes in transcript-only mode with a loud `NO VIDEO OBTAINED`
+  warning instead of dying.
+- **`--max-height`**, and the source height cap is now stated in the report.
+
+### Changed
+- **The source height cap is derived from `--resolution` instead of pinned at 720p.**
+  Measured before changing anything: a 1080p pull is ~75% larger (70 MB vs 40 MB) and
+  visually indistinguishable at a 1024px frame width, because frames are downscaled anyway.
+  Raising the default would have cost every run for nothing. A 16:9 source of height H is
+  16/9·H wide, so the cap now rises only when the requested frame width needs it:
+  `512→720p`, `1280→720p`, `1920→1080p`, `2560→1440p`.
+
+### Fixed
+- **Cache hits no longer discard the human-authored caption preference.** `_cached_download`
+  called `_pick_subtitle()` without the manual-language set, so every hit silently fell back
+  to auto-track ranking — an interaction between #235 and #221 that neither author could see.
+- **The cache key now includes the media format.** It was URL + audio/video only, so lifting
+  the resolution cap would have served the cached 720p file for that URL indefinitely, with a
+  perfectly healthy-looking run. The height-cap change above is only safe because of this.
+- **The upgrade hint resolves the symlink before matching.** #228 matched against
+  `shutil.which()`, but uv and pipx both symlink into `~/.local/bin` and keep the real venv
+  elsewhere — so a uv install was told to run `yt-dlp -U`, which cannot update a managed
+  venv, and pipx fell through its own check. A wrong command here is worse than no hint,
+  since it appears when someone is already stuck.
+
+### Added (tests)
+- `test_cache_interactions.py`, `test_source_height.py`, `test_update_hint.py` — 17 tests
+  across the three fixes above; each fails against the code it guards.
+- Made #228's own 403 test host-independent. It called the real `_update_hint()` and asserted
+  against three hard-coded strings, so it passed or failed on how the developer installed
+  yt-dlp, and failed outright on a uv install.
+
+**138 tests passing.**
+
 ## [0.2.2] — 2026-09-20 (fork)
 
 ### Added
