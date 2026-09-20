@@ -1,10 +1,10 @@
 {
   "name": "claude-video",
   "metadata": {
-    "description": "Give Claude a video input. /watch downloads, extracts frames, transcribes, and hands it all to Claude."
+    "description": "Give Claude a video input. /watch downloads, extracts frames, transcribes, and hands it all to Claude. Fork of bradautomates/claude-video by Bradley Bonanno (MIT), with fixes for ffmpeg 8+ where -vsync was removed."
   },
   "owner": {
-    "name": "Bradley Bonanno"
+    "name": "Robin Jose (fork of Bradley Bonanno's claude-video)"
   },
   "plugins": [
     {
@@ -15,7 +15,7 @@
       },
       "source": "./",
       "category": "productivity",
-      "homepage": "https://github.com/bradautomates/claude-video"
+      "homepage": "https://github.com/robinjose911/claude-video"
     }
   ]
 }

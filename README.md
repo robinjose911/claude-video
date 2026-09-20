@@ -1,16 +1,34 @@
+> ## ⑂ This is a fork
+>
+> This repository is a fork of **[bradautomates/claude-video](https://github.com/bradautomates/claude-video)**
+> by **Bradley Bonanno**, who wrote all of the original work. MIT licensed, and the
+> `LICENSE` file is unchanged — full credit for `/watch` belongs upstream.
+>
+> **Why this fork exists:** `/watch` is completely broken on ffmpeg 8 and newer,
+> which removed the `-vsync` flag the frame extractor depends on. Upstream's last
+> commit was 2026-06-30. As of 2026-09-20 the bug has ~15 open issues and ~28 open
+> pull requests fixing it, none merged — the repository has never merged a pull
+> request from anyone. This fork applies the fix so `/watch` works on a current
+> ffmpeg, plus a guard so that a future ffmpeg change degrades gracefully instead
+> of killing the run.
+>
+> **Maintained for personal use.** Issues and pull requests here are not being
+> solicited; please file upstream so the fix can eventually land for everyone.
+> See [CHANGELOG.md](CHANGELOG.md) for exactly what differs from `v0.2.0`.
+
 # /watch
 
 **Give Claude the ability to watch any video.**
 
 Claude Code (recommended — auto-updates via marketplace):
 ```
-/plugin marketplace add bradautomates/claude-video
+/plugin marketplace add robinjose911/claude-video
 /plugin install watch@claude-video
 ```
 
 Codex, Cursor, Copilot, Gemini CLI, or any of 50+ [Agent Skills](https://agentskills.io) hosts:
 ```bash
-npx skills add bradautomates/claude-video -g
+npx skills add robinjose911/claude-video -g
 ```
 (`-g` installs globally for your user, available across all projects. Drop it to scope per-project.)
 
@@ -99,15 +117,15 @@ End-to-end from a cold URL, `transcript` is the cheapest mode by far; the frame 
 
 | Surface | Install |
 |---------|---------|
-| **Claude Code** | `/plugin marketplace add bradautomates/claude-video` then `/plugin install watch@claude-video` |
-| **Codex, Cursor, Copilot, Gemini CLI, +50 more** | `npx skills add bradautomates/claude-video -g` |
+| **Claude Code** | `/plugin marketplace add robinjose911/claude-video` then `/plugin install watch@claude-video` |
+| **Codex, Cursor, Copilot, Gemini CLI, +50 more** | `npx skills add robinjose911/claude-video -g` |
 | **claude.ai** (web) | [Download `watch.skill`](https://github.com/bradautomates/claude-video/releases/latest) → Settings → Capabilities → Skills → `+` |
 | **Manual / dev** | `git clone` then symlink `skills/watch` into your host's skills dir (see below) |
 
 ### Claude Code
 
 ```
-/plugin marketplace add bradautomates/claude-video
+/plugin marketplace add robinjose911/claude-video
 /plugin install watch@claude-video
 ```
 
@@ -118,7 +136,7 @@ Update later with `/plugin update watch@claude-video`.
 The [Agent Skills](https://agentskills.io) CLI installs the skill into whatever agents it detects:
 
 ```bash
-npx skills add bradautomates/claude-video -g
+npx skills add robinjose911/claude-video -g
 ```
 
 `-g` installs globally for your user (`~/.codex/skills`, `~/.cursor/skills`, etc.); drop it to install into the current project instead. Useful flags:

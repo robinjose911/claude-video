@@ -2,6 +2,32 @@
 
 All notable changes to `/watch` are documented here.
 
+## [0.2.1] — 2026-09-20 (fork)
+
+First release of the [robinjose911](https://github.com/robinjose911/claude-video) fork of
+[bradautomates/claude-video](https://github.com/bradautomates/claude-video). Upstream `v0.2.0`
+plus the two fixes below; everything else is unchanged.
+
+### Fixed
+- **Frame extraction on ffmpeg 8+ (`-vsync` was removed).** `frames.py` passed `-vsync vfr`
+  to ffmpeg in both the scene-aware path (`balanced`, `token-burner`) and the keyframe path
+  (`efficient`). ffmpeg removed the long-deprecated `-vsync` in favour of `-fps_mode`, so on
+  ffmpeg 8/9 both paths died with `Unrecognized option 'vsync'` and **no frames were ever
+  extracted**. Now uses `-fps_mode vfr`, which is equivalent and has been supported since
+  ffmpeg 5.1. Upstream issues: #99, #117, #126, #143, #161, #163, #174, #180, #195, #229.
+- **An ffmpeg failure no longer aborts the whole run.** The extraction helpers raise
+  `SystemExit`, and nothing in `watch.py` caught it, so the process exited before printing
+  the report — discarding the transcript as well, even when transcription had already
+  succeeded. All the user saw was one line of ffmpeg stderr. Frame extraction (both the
+  detail engines and `--timestamps` cue frames) is now guarded: on failure `/watch` prints
+  the full report with the transcript intact, names the cause in the **Frames** line, and
+  exits 0. Not covered by any upstream pull request.
+
+### Added
+- `tests/test_frame_failure_guard.py` — four regression tests that shim a failing `ffmpeg`
+  onto `PATH` and assert the report still prints, still names the cause, and still exits 0.
+  These fail against upstream `v0.2.0` and pass here.
+
 ## [0.2.0] — 2026-06-29
 
 ### Added

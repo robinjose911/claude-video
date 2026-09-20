@@ -1,12 +1,12 @@
 {
   "name": "watch",
-  "version": "0.2.0",
-  "description": "Let Claude watch a video. Downloads with yt-dlp, extracts auto-scaled frames with ffmpeg, pulls captions or falls back to Whisper, and hands frames + transcript to Claude so it can answer questions about the video.",
+  "version": "0.2.1",
+  "description": "Let Claude watch a video. Downloads with yt-dlp, extracts auto-scaled frames with ffmpeg, pulls captions or falls back to Whisper, and hands frames + transcript to Claude so it can answer questions about the video. Fork of bradautomates/claude-video with ffmpeg 8+ fixes.",
   "author": {
     "name": "Bradley Bonanno"
   },
-  "homepage": "https://github.com/bradautomates/claude-video",
-  "repository": "https://github.com/bradautomates/claude-video",
+  "homepage": "https://github.com/robinjose911/claude-video",
+  "repository": "https://github.com/robinjose911/claude-video",
   "license": "MIT",
   "keywords": [
     "video",
@@ -24,7 +24,7 @@
   "skills": "./skills/",
   "interface": {
     "displayName": "watch",
-    "shortDescription": "Give Claude a video input — paste a URL or path and ask about it.",
+    "shortDescription": "Give Claude a video input \u2014 paste a URL or path and ask about it.",
     "longDescription": "watch adds a skill that lets the agent watch any video: it downloads with yt-dlp, extracts auto-scaled frames with ffmpeg, pulls a timestamped transcript from native captions (or the Whisper API as a fallback), and hands frames + transcript to the model so it can answer questions grounded in what's actually on screen and in the audio.",
     "developerName": "Bradley Bonanno",
     "category": "Productivity",
@@ -32,7 +32,7 @@
       "Interactive",
       "Read"
     ],
-    "websiteURL": "https://github.com/bradautomates/claude-video",
+    "websiteURL": "https://github.com/robinjose911/claude-video",
     "defaultPrompt": [
       "/watch https://youtu.be/dQw4w9WgXcQ what happens at the 30 second mark?",
       "/watch ~/Movies/screen-recording.mp4 when does the UI break?",
