@@ -73,7 +73,12 @@ def _pick_subtitle(out_dir: Path, manual_langs: set[str] | None = None) -> Path 
         # A human-authored track always wins: it is punctuated, speaker-labelled
         # and roughly a third the size of the rolling auto-generated variant.
         manual = 0 if lang in manual_langs else 1
-        order = {"en": 1, "en-US": 2, "en-GB": 3, "en-orig": 4}.get(lang, 5)
+        # Among AUTO tracks, "en-orig" is the source-language track while a bare
+        # "en" on a non-English video is YouTube's machine TRANSLATION of it.
+        # Preferring "en" there would silently swap an original transcript for a
+        # translated one, so "en-orig" ranks first. On an English video the two
+        # tracks are byte-identical, so this costs nothing.
+        order = {"en-orig": 1, "en": 2, "en-US": 3, "en-GB": 4}.get(lang, 5)
         return (manual, order)
 
     return min(candidates, key=rank)
