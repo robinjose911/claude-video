@@ -172,19 +172,28 @@ def main() -> int:
     frame_meta: dict = {"engine": "none", "candidate_count": 0, "selected_count": 0, "fallback": False}
     cue_frames: list[dict] = []
     cue_meta: dict = {}
+    frame_error: str | None = None
 
     # Transcript cues are pinned: extracted first and counted against the cap so
     # the detail engine never evicts the moments the user explicitly asked for.
     if cue_timestamps and video_path:
-        cue_frames, cue_meta = extract_at_timestamps(
-            video_path,
-            work / "frames",
-            cue_timestamps,
-            resolution=args.resolution,
-            max_frames=max_frames,
-            start_seconds=start_sec,
-            end_seconds=end_sec,
-        )
+        try:
+            cue_frames, cue_meta = extract_at_timestamps(
+                video_path,
+                work / "frames",
+                cue_timestamps,
+                resolution=args.resolution,
+                max_frames=max_frames,
+                start_seconds=start_sec,
+                end_seconds=end_sec,
+            )
+        except (SystemExit, Exception) as exc:  # ffmpeg/env failure must not abort the report
+            cue_frames, cue_meta = [], {}
+            frame_error = str(exc).strip() or exc.__class__.__name__
+            print(
+                f"[watch] cue frame extraction failed — continuing without frames: {frame_error}",
+                file=sys.stderr,
+            )
         if cue_meta.get("dropped_out_of_window"):
             print(
                 f"[watch] {cue_meta['dropped_out_of_window']} cue timestamp(s) outside the "
@@ -201,27 +210,36 @@ def main() -> int:
             f"(target {target}, cap {cap_label})…",
             file=sys.stderr,
         )
-        if detail == "efficient":
-            frames, frame_meta = extract_keyframes(
-                video_path,
-                work / "frames",
-                resolution=args.resolution,
-                max_frames=detail_budget,
-                start_seconds=start_sec,
-                end_seconds=end_sec,
-                dedup=not args.no_dedup,
-            )
-        else:  # balanced, token-burner
-            frames, frame_meta = extract_scene_or_uniform(
-                video_path,
-                work / "frames",
-                fps=fps,
-                target_frames=target,
-                resolution=args.resolution,
-                max_frames=detail_budget,
-                start_seconds=start_sec,
-                end_seconds=end_sec,
-                dedup=not args.no_dedup,
+        try:
+            if detail == "efficient":
+                frames, frame_meta = extract_keyframes(
+                    video_path,
+                    work / "frames",
+                    resolution=args.resolution,
+                    max_frames=detail_budget,
+                    start_seconds=start_sec,
+                    end_seconds=end_sec,
+                    dedup=not args.no_dedup,
+                )
+            else:  # balanced, token-burner
+                frames, frame_meta = extract_scene_or_uniform(
+                    video_path,
+                    work / "frames",
+                    fps=fps,
+                    target_frames=target,
+                    resolution=args.resolution,
+                    max_frames=detail_budget,
+                    start_seconds=start_sec,
+                    end_seconds=end_sec,
+                    dedup=not args.no_dedup,
+                )
+        except (SystemExit, Exception) as exc:  # ffmpeg/env failure must not abort the report
+            frames = []
+            frame_meta = {"engine": "failed", "candidate_count": 0, "selected_count": 0, "fallback": False}
+            frame_error = str(exc).strip() or exc.__class__.__name__
+            print(
+                f"[watch] frame extraction failed — continuing with transcript only: {frame_error}",
+                file=sys.stderr,
             )
 
     if cue_frames:
@@ -286,7 +304,9 @@ def main() -> int:
     range_mode = "focused" if focused else "full"
     print(f"- **Detail:** {detail}")
     detail_count = frame_meta.get("selected_count", 0)
-    if detail != "transcript":
+    if frame_error:
+        print(f"- **Frames:** extraction FAILED — transcript only (`{frame_error}`)")
+    elif detail != "transcript":
         cap_label = "unlimited" if detail_budget is None else str(detail_budget)
         engine = frame_meta.get("engine", "scene")
         fallback = " with uniform fallback" if frame_meta.get("fallback") else ""
@@ -349,6 +369,10 @@ def main() -> int:
                 f"- `{frame['path']}` "
                 f"(t={format_time(frame['timestamp_seconds'])}, reason={frame.get('reason', 'selected')})"
             )
+    elif frame_error:
+        print(f"_No frames extracted — ffmpeg failed: `{frame_error}`._")
+        print()
+        print("_Frame extraction failed independently of transcription — re-run once ffmpeg is working._")
     else:
         print("_No frames extracted._")
 
