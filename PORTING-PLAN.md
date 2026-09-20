@@ -53,10 +53,12 @@ Optimised for one workflow: **watch → check → summarise → ask follow-ups**
 | #58  | 36  | Warn when yt-dlp is stale. (#227 does the same in 346 lines — prefer the small one unless review says otherwise.) |
 
 ### Our own change, not a port
-- [ ] **Lift the hardcoded 720p cap.** `download.py:126` pins `bv*[height<=720]`. Slide-heavy
-      videos are unreadable at that source resolution even after bumping `--resolution`.
-      Upstream #215 fixes it but drags in 2096 lines across 15 files — write our own
-      configurable cap in ~5 lines instead.
+- [x] **720p cap** — done, but *not* by lifting it. Measured first: a 1080p pull is ~75%
+      larger and indistinguishable at 1024px frames, so raising the default would cost every
+      run for nothing. The earlier claim that slides were "unreadable" at 720p was wrong.
+      Instead the cap is derived from `--resolution` (512→720p, 1920→1080p, 2560→1440p), with
+      `--max-height` to override and the value printed in the report. Only safe because the
+      cache keys on media format.
 
 ---
 
