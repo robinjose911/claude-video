@@ -72,14 +72,18 @@ def test_non_403_failure_message_is_byte_for_byte_unchanged(tmp_path):
 
 def test_403_failure_names_staleness_and_upgrade_command(tmp_path, monkeypatch):
     monkeypatch.setattr(download, "_yt_dlp_version", lambda: "2026.07.04")
+    # Pin the hint: the real one inspects THIS machine's install layout, so
+    # asserting against a fixed list of hints made the test pass or fail on
+    # how the developer happened to install yt-dlp. What belongs here is that
+    # the message carries whatever hint was produced; which hint is correct
+    # for which layout is test_update_hint.py's job.
+    monkeypatch.setattr(download, "_update_hint", lambda: "<upgrade command>")
     out_dir = tmp_path / "download"
     msg = download._download_failure_message(FORBIDDEN_403_OUTPUT, 1, out_dir, None)
     assert msg.startswith(f"yt-dlp did not produce a video file in {out_dir} (exit 1)")
     assert "2026.07.04" in msg
     assert "Update and retry" in msg
-    assert any(
-        hint in msg for hint in ("yt-dlp -U", "pipx upgrade yt-dlp", "brew upgrade yt-dlp")
-    )
+    assert "<upgrade command>" in msg
     # Explicitly rules out the wrong diagnosis a bare error code invited.
     assert "not a video that's actually blocked" in msg
 

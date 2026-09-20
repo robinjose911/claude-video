@@ -234,8 +234,23 @@ def _yt_dlp_version() -> str | None:
 
 
 def _update_hint() -> str:
-    """Upgrade command matching how yt-dlp appears to be installed."""
-    path = shutil.which("yt-dlp") or ""
+    """Upgrade command matching how yt-dlp appears to be installed.
+
+    Resolves the symlink before matching. Both uv and pipx put a symlink in
+    ~/.local/bin and keep the real venv elsewhere, so inspecting what
+    shutil.which() returns identifies neither -- a uv install would be told to
+    run `yt-dlp -U`, which cannot update a managed venv, and a pipx install
+    would fall through the "pipx" check entirely.
+    """
+    found = shutil.which("yt-dlp")
+    if not found:
+        return "yt-dlp -U  (or: pip install -U yt-dlp)"
+    try:
+        path = str(Path(found).resolve())
+    except OSError:
+        path = found
+    if "uv/tools" in path or "uv\\tools" in path:
+        return "uv tool upgrade yt-dlp"
     if "pipx" in path:
         return "pipx upgrade yt-dlp"
     if "Cellar" in path or "homebrew" in path.lower():
